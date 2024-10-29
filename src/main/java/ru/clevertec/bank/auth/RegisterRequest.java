@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.clevertec.bank.entity.enumeration.Role;
 
 @Data
 @Builder
@@ -17,5 +16,4 @@ public class RegisterRequest {
     private String firstName;
     private String secondName;
     private String patronymicName;
-    private Role role;
 }

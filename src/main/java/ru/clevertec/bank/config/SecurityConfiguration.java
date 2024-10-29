@@ -34,7 +34,7 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers(HttpMethod.GET, "/bank/auth/some-endpoint").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.GET, "/bank/auth/some-endpoint").hasAuthority("ADMIN")
                         .requestMatchers("/bank/auth/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

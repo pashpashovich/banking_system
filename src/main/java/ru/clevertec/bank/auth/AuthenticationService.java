@@ -7,8 +7,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.clevertec.bank.config.JwtService;
+import ru.clevertec.bank.entity.Client;
 import ru.clevertec.bank.entity.User;
+import ru.clevertec.bank.entity.enumeration.Role;
 import ru.clevertec.bank.repository.UserRepository;
+import ru.clevertec.bank.service.ClientService;
 import ru.clevertec.bank.service.UserService;
 
 @Service
@@ -16,6 +19,7 @@ import ru.clevertec.bank.service.UserService;
 public class AuthenticationService {
 
     private final UserService userService;
+    private final ClientService clientService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -24,17 +28,18 @@ public class AuthenticationService {
     public AuthenticationResponse register(RegisterRequest request) {
         if(userService.isLoginAvailable(request.getLogin()) && userService.isEmailAvailable(request.getEmail()))
         {
-            var user = User.builder()
+            User user = User.builder()
                     .login(request.getLogin())
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .firstName(request.getFirstName())
                     .secondName(request.getSecondName())
                     .patronymicName(request.getPatronymicName())
-                    .role(request.getRole())
+                    .role(Role.CLIENT)
                     .build();
-            userService.save(user);
-            var jwtToken = jwtService.generateToken(user);
+            Client client = new Client(user);
+            clientService.save(client);
+            var jwtToken = jwtService.generateToken(client);
             return AuthenticationResponse.builder()
                     .token(jwtToken)
                     .build();
