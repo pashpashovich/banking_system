@@ -37,7 +37,7 @@ public class AuthenticationService {
                     .patronymicName(request.getPatronymicName())
                     .role(Role.CLIENT)
                     .build();
-            Client client = new Client(user);
+            Client client = new Client(user, request.getAddress(), request.getMobilePhone(), request.getIncome());
             clientService.save(client);
             var jwtToken = jwtService.generateToken(client);
             return AuthenticationResponse.builder()

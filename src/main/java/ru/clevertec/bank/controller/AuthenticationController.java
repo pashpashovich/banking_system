@@ -24,6 +24,8 @@ import ru.clevertec.bank.auth.RegisterRequest;
 @RequiredArgsConstructor
 public class AuthenticationController {
     private final AuthenticationService service;
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
+
 
     @PostMapping("/signUp")
     public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request) {
@@ -37,7 +39,15 @@ public class AuthenticationController {
         return ResponseEntity.ok(service.authenticate(request));
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            SecurityContextHolder.clearContext();
+            logger.info("User logged out: {}", authentication.getName());
+        }
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/some-endpoint")
     public String someMethod() {

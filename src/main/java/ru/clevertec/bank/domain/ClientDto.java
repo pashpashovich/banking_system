@@ -1,22 +1,22 @@
-package ru.clevertec.bank.auth;
+package ru.clevertec.bank.domain;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import ru.clevertec.bank.entity.enumeration.Role;
 
 @Data
-@Builder
-@AllArgsConstructor
+@Accessors(chain = true)
 @NoArgsConstructor
-public class RegisterRequest {
-    private String login;
+@AllArgsConstructor
+public class ClientDto {
     private String email;
-    private String password;
     private String firstName;
     private String secondName;
     private String patronymicName;
-    private String mobilePhone;
+    private Role role;
     private String address;
+    private String mobilePhone;
     private double income;
 }

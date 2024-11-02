@@ -36,6 +36,9 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                         .requestMatchers(HttpMethod.GET, "/bank/auth/some-endpoint").hasAuthority("ADMIN")
                         .requestMatchers("/bank/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/avatar").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/users/*/avatar").hasAuthority("CLIENT")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import ru.clevertec.bank.entity.User;
 
 import java.security.Key;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails){
+    public String generateToken(User userDetails){
         Map<String, Object> claims = new HashMap<>();
         List<String> roles = new ArrayList<>();
         roles.add("ADMIN");
@@ -51,7 +52,7 @@ public class JwtService {
 
     public String generateToken(
             Map<String, Object> extraClaims,
-            UserDetails userDetails){
+            User userDetails){
         log.info("Token generated for user: {}", userDetails.getUsername());
         log.info("Roles: {}", userDetails.getAuthorities());
         return Jwts
