@@ -6,4 +6,6 @@ import ru.clevertec.bank.entity.Client;
 
 @Repository
 public interface ClientRepository extends JpaRepository<Client,Long> {
+
+    Client findClientById(Long id);
 }

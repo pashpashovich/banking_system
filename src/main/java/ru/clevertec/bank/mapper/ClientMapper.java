@@ -8,11 +8,6 @@ import ru.clevertec.bank.entity.Client;
 @Mapper(componentModel = "spring")
 public interface ClientMapper {
 
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "firstName", target = "firstName")
-    @Mapping(source = "secondName", target = "secondName")
-    @Mapping(source = "patronymicName", target = "patronymicName")
-    @Mapping(source = "role", target = "role")
     @Mapping(source = "address", target = "address")
     @Mapping(source = "mobilePhone", target = "mobilePhone")
     @Mapping(source = "income", target = "income")

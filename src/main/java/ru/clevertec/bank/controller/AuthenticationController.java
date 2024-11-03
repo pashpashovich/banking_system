@@ -20,7 +20,7 @@ import ru.clevertec.bank.auth.RegisterRequest;
 
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RestController
-@RequestMapping("/bank/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
     private final AuthenticationService service;
