@@ -25,17 +25,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.clevertec.bank.domain.AccountDto;
 import ru.clevertec.bank.domain.TransactionDTO;
 import ru.clevertec.bank.entity.Transaction;
 import ru.clevertec.bank.entity.enumeration.TransactionType;
 import ru.clevertec.bank.mapper.TransactionMapper;
 import ru.clevertec.bank.request.AccountTransactionStatsDTO;
 import ru.clevertec.bank.request.DailyTransactionStats;
+import ru.clevertec.bank.service.AccountService;
 import ru.clevertec.bank.service.CurrencyConversionService;
 import ru.clevertec.bank.service.TransactionService;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -55,6 +58,7 @@ import java.util.Objects;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final AccountService accountService;
     private final CurrencyConversionService currencyConversionService;
     private final TransactionMapper transactionMapper;
 
@@ -91,7 +95,7 @@ public class TransactionController {
                     .setFontSize(24)
                     .setBold()
                     .setFontColor(ColorConstants.BLACK)
-                    .setFixedPosition(80,747,1000);
+                    .setFixedPosition(80, 747, 1000);
             document.add(bankName);
 
             Paragraph title = new Paragraph("Чек")
@@ -156,7 +160,7 @@ public class TransactionController {
             int day = transaction.getTransactionTime().getDayOfMonth();
             dailyStats.putIfAbsent(day, new DailyTransactionStats(day));
             DailyTransactionStats stats = dailyStats.get(day);
-            BigDecimal amountInByn = currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()),transaction.getCurrency(),"BYN");
+            BigDecimal amountInByn = currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(), "BYN");
 
             if (transaction.getTransactionType().equals(TransactionType.DEPOSIT) || (transaction.getTransactionType().equals(TransactionType.TRANSFER) && Objects.equals(transaction.getRecipientAccountId(), Long.valueOf(accountNum)))) {
                 stats.addDeposit(amountInByn);
@@ -183,7 +187,7 @@ public class TransactionController {
                 startDate, endDate, accountNum);
 
         List<BigDecimal> transactionsInByn = transactions.stream()
-                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(),"BYN"))
+                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(), "BYN"))
                 .toList();
 
         BigDecimal maxTransaction = transactionsInByn.stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
@@ -194,17 +198,118 @@ public class TransactionController {
 
         BigDecimal totalDepositInByn = transactionService.findDepositTransactions(accountNum, startDate, endDate)
                 .stream()
-                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(),"BYN"))
+                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(), "BYN"))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalWithdrawalInByn = transactionService.findWithdrawalTransactions(accountNum, startDate, endDate)
                 .stream()
-                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(),"BYN"))
+                .map(transaction -> currencyConversionService.convert(BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(), "BYN"))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         AccountTransactionStatsDTO stats = new AccountTransactionStatsDTO(
                 maxTransaction, minTransaction, avgTransaction, totalDepositInByn, totalWithdrawalInByn
         );
 
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/report/{accountNum}/{month}")
+    public ResponseEntity<byte[]> generateMonthlyTransactionReport(
+            @PathVariable String accountNum,
+            @PathVariable int month) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            AccountDto account = accountService.getAccountById(Long.valueOf(accountNum));
+            if (account == null) {
+                return ResponseEntity.status(404).body("Счет не найден".getBytes(StandardCharsets.UTF_8));
+            }
+            LocalDateTime startDate = YearMonth.of(LocalDate.now().getYear(), month).atDay(1).atStartOfDay();
+            LocalDateTime endDate = YearMonth.of(LocalDate.now().getYear(), month).atEndOfMonth().atTime(23, 59, 59);
+            List<TransactionDTO> transactions = transactionService.findTransactionsByDateRangeAndAccount(startDate, endDate, String.valueOf(account.getAccountNum()));
+            PdfWriter writer = new PdfWriter(outputStream);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+            String fontPath = "src/main/resources/fonts/DejaVuSans.ttf";
+            PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
+            document.add(new Paragraph("Отчет по транзакциям")
+                    .setFont(font)
+                    .setFontSize(18)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setBold()
+                    .setMarginBottom(20));
+            document.add(new Paragraph("Дата отчета: " + LocalDateTime.now())
+                    .setFont(font));
+            document.add(new Paragraph("Номер аккаунта: " + accountNum)
+                    .setFont(font));
+            document.add(new Paragraph("Месяц: " + month)
+                    .setFont(font).setMarginBottom(10));
+            BigDecimal maxTransaction = BigDecimal.ZERO;
+            BigDecimal minTransaction = new BigDecimal(Integer.MAX_VALUE);
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            BigDecimal totalDeposits = BigDecimal.ZERO;
+            BigDecimal totalWithdrawals = BigDecimal.ZERO;
+            int transactionCount = 0;
+
+            for (TransactionDTO transaction : transactions) {
+                BigDecimal amountInByn = currencyConversionService.convert(
+                        BigDecimal.valueOf(transaction.getAmount()), transaction.getCurrency(), "BYN");
+
+                maxTransaction = maxTransaction.max(amountInByn);
+                minTransaction = minTransaction.min(amountInByn);
+                totalAmount = totalAmount.add(amountInByn);
+                transactionCount++;
+
+                if (transaction.getTransactionType().equals(TransactionType.DEPOSIT) ||
+                        (transaction.getTransactionType().equals(TransactionType.TRANSFER) &&
+                                transaction.getRecipientAccountId().equals(Long.valueOf(accountNum)))) {
+                    totalDeposits = totalDeposits.add(amountInByn);
+                }
+                if (transaction.getTransactionType().equals(TransactionType.WITHDRAWAL) ||
+                        (transaction.getTransactionType().equals(TransactionType.TRANSFER) &&
+                                transaction.getSenderAccountId().equals(Long.valueOf(accountNum)))) {
+                    totalWithdrawals = totalWithdrawals.add(amountInByn);
+                }
+            }
+            document.add(new Paragraph("Максимальная транзакция: " + maxTransaction + " BYN")
+                    .setFont(font));
+            document.add(new Paragraph("Минимальная транзакция: " + minTransaction + " BYN")
+                    .setFont(font));
+            document.add(new Paragraph("Общая сумма транзакций: " + totalAmount + " BYN")
+                    .setFont(font));
+            document.add(new Paragraph("Общая сумма доходов: " + totalDeposits + " BYN")
+                    .setFont(font));
+            document.add(new Paragraph("Общая сумма расходов: " + totalWithdrawals + " BYN")
+                    .setFont(font));
+            document.add(new Paragraph("Общее количество транзакций: " + transactionCount)
+                    .setFont(font).setMarginBottom(10));
+
+            Table table = new Table(UnitValue.createPercentArray(new float[]{1, 2, 1, 2, 1}));
+            table.addHeaderCell(new Paragraph("ID").setFont(font).setBold());
+            table.addHeaderCell(new Paragraph("Сумма").setFont(font).setBold());
+            table.addHeaderCell(new Paragraph("Валюта").setFont(font).setBold());
+            table.addHeaderCell(new Paragraph("Дата").setFont(font).setBold());
+            table.addHeaderCell(new Paragraph("Тип").setFont(font).setBold());
+
+            for (TransactionDTO transaction : transactions) {
+                table.addCell(new Paragraph(String.valueOf(transaction.getId())).setFont(font));
+                table.addCell(new Paragraph(String.valueOf(transaction.getAmount())).setFont(font));
+                table.addCell(new Paragraph(transaction.getCurrency()).setFont(font));
+                table.addCell(new Paragraph(transaction.getTransactionTime().toString()).setFont(font));
+                table.addCell(new Paragraph(transaction.getTransactionType().toString()).setFont(font));
+            }
+
+            document.add(table);
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "transaction_report_" + accountNum + "_" + month + ".pdf");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(outputStream.toByteArray());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
 }

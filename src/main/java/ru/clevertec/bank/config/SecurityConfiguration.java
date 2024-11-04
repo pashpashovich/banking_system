@@ -42,7 +42,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/auth/signUp").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/accounts/convert/*/*/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/transactions").hasAuthority("CLIENT")
-                        .requestMatchers(HttpMethod.GET, "/api/transactions/*/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/transactions/*/*").authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
