@@ -1,32 +1,38 @@
 package ru.clevertec.bank.config;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @Slf4j
 public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
-    @Autowired
     private AuthenticationProvider authenticationProvider;
+
+    public SecurityConfiguration(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.authenticationProvider = authenticationProvider;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -34,20 +40,60 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers(HttpMethod.GET, "/api/users/*").hasAuthority("CLIENT")
-                        .requestMatchers(HttpMethod.GET, "/api/users/*/avatar").hasAuthority("CLIENT")
-                        .requestMatchers(HttpMethod.POST, "/api/users/*/avatar").hasAuthority("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/accounts/create").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/authenticate").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/signUp").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/accounts/convert/*/*/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/transactions").hasAuthority("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/transactions/*/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/authenticate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/client").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/email-check").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/client/*").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/transactions/by-date").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/clients-income-accounts").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/transactions/boxplot").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/transactions/count-by-type").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/confirm-reset").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/*/avatar").hasAnyAuthority("CLIENT", "ADMIN", "DIRECTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/avatar").hasAnyAuthority("CLIENT", "ADMIN", "DIRECTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/transactions/").hasAnyAuthority("ADMIN", "DIRECTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("DIRECTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/admin/users").hasAuthority("DIRECTOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*").hasAuthority("DIRECTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/admin/users/*/status").hasAuthority("DIRECTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/users/*").hasAuthority("DIRECTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/users/client/*").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/role").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/users/admin/*").hasAnyAuthority("ADMIN", "DIRECTOR")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authenticationErrorFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public OncePerRequestFilter authenticationErrorFilter() {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+                try {
+                    filterChain.doFilter(request, response);
+                } catch (Exception e) {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType("application/json");
+                    try {
+                        response.getWriter().write("{\"error\": \"Неверный логин или пароль\"}");
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        };
     }
 
 }

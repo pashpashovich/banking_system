@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.clevertec.bank.domain.AccountDto;
+import ru.clevertec.bank.domain.ClientIncomeAccountDto;
+import ru.clevertec.bank.domain.ClientIncomeTotalBalanceDto;
 import ru.clevertec.bank.domain.TransactionDTO;
-import ru.clevertec.bank.request.AccountCreationRequest;
+import ru.clevertec.bank.domain.AccountCreationRequest;
 import ru.clevertec.bank.service.AccountService;
 import ru.clevertec.bank.service.CurrencyConversionService;
 import ru.clevertec.bank.service.TransactionService;
@@ -30,8 +32,6 @@ public class AccountController {
 
     private final AccountService accountService;
     private final TransactionService transactionService;
-
-
     private final CurrencyConversionService currencyConversionService;
 
     public AccountController(AccountService accountService, TransactionService transactionService, CurrencyConversionService currencyConversionService) {
@@ -40,10 +40,28 @@ public class AccountController {
         this.currencyConversionService = currencyConversionService;
     }
 
+    @GetMapping()
+    public ResponseEntity<List<AccountDto>> getAccounts() {
+        List<AccountDto> accountDtos = accountService.getAccounts();
+        return ResponseEntity.ok(accountDtos);
+    }
+
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountDto> getAccountById(@PathVariable Long accountId) {
         AccountDto accountDto = accountService.getAccountById(accountId);
         return ResponseEntity.ok(accountDto);
+    }
+
+    @GetMapping("/clients-income-accounts")
+    public ResponseEntity<List<ClientIncomeAccountDto>> getClientsIncomeAccounts() {
+        List<ClientIncomeAccountDto> data = accountService.getClientsIncomeAndAccountCount();
+        return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/clients-income-total-balance")
+    public ResponseEntity<List<ClientIncomeTotalBalanceDto>> getClientsIncomeAndTotalBalance() {
+        List<ClientIncomeTotalBalanceDto> data = accountService.getClientsIncomeAndTotalBalance();
+        return ResponseEntity.ok(data);
     }
 
     @GetMapping("/{accountId}/transactions")

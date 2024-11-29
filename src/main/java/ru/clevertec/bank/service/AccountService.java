@@ -3,6 +3,12 @@ package ru.clevertec.bank.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.clevertec.bank.domain.AccountDto;
+import ru.clevertec.bank.domain.CheckingAccountDto;
+import ru.clevertec.bank.domain.ClientIncomeAccountDto;
+import ru.clevertec.bank.domain.ClientIncomeTotalBalanceDto;
+import ru.clevertec.bank.domain.CreditAccountDto;
+import ru.clevertec.bank.domain.SavingsAccountDto;
+import ru.clevertec.bank.domain.SocialAccountDto;
 import ru.clevertec.bank.entity.Account;
 import ru.clevertec.bank.entity.CheckingAccount;
 import ru.clevertec.bank.entity.Client;
@@ -12,7 +18,7 @@ import ru.clevertec.bank.entity.SocialAccount;
 import ru.clevertec.bank.mapper.AccountMapperByInstanceChecks;
 import ru.clevertec.bank.repository.AccountRepository;
 import ru.clevertec.bank.repository.ClientRepository;
-import ru.clevertec.bank.request.AccountCreationRequest;
+import ru.clevertec.bank.domain.AccountCreationRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,55 +46,84 @@ public class AccountService {
         return accountMapper.mapToAccountDTO(account);
     }
 
+    public List<ClientIncomeTotalBalanceDto> getClientsIncomeAndTotalBalance() {
+        List<Client> clients = clientRepository.findAll();
+
+        return clients.stream().map(client -> {
+            ClientIncomeTotalBalanceDto dto = new ClientIncomeTotalBalanceDto();
+            dto.setClientId(client.getId());
+            dto.setIncome(BigDecimal.valueOf(client.getIncome()));
+            BigDecimal totalBalance = accountRepository.findByClientId(client.getId())
+                    .stream()
+                    .map(Account::getAccountBalance)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            dto.setTotalBalance(totalBalance);
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
 
     public AccountDto createAccount(AccountCreationRequest accountCreationRequest) {
         Account account;
+
+        Client client = clientRepository.findById(
+                switch (accountCreationRequest.getAccountType()) {
+                    case CHECKING -> accountCreationRequest.getCheckingAccountDto().getClientId();
+                    case SAVINGS -> accountCreationRequest.getSavingsAccountDto().getClientId();
+                    case SOCIAL -> accountCreationRequest.getSocialAccountDto().getClientId();
+                    case CREDIT -> accountCreationRequest.getCreditAccountDto().getClientId();
+                }
+        ).orElseThrow(() -> new IllegalArgumentException("Клиент не найден"));
         switch (accountCreationRequest.getAccountType()) {
             case CHECKING -> {
+                CheckingAccountDto dto = accountCreationRequest.getCheckingAccountDto();
                 account = new CheckingAccount(
-                        accountCreationRequest.getCheckingAccountDto().getAccountNum(),
-                        clientRepository.findById(accountCreationRequest.getCheckingAccountDto().getClientId()).get(),
-                        BigDecimal.valueOf(accountCreationRequest.getCheckingAccountDto().getAccountBalance()),
-                        accountCreationRequest.getCheckingAccountDto().getCurrency(),
-                        accountCreationRequest.getCheckingAccountDto().getOpenDate(),
-                        accountCreationRequest.getCheckingAccountDto().getAccountActivity(),
-                        accountCreationRequest.getCheckingAccountDto().getOverdraftLimit()
+                        dto.getAccountNum(),
+                        client,
+                        BigDecimal.valueOf(dto.getAccountBalance()),
+                        dto.getCurrency(),
+                        dto.getOpenDate(),
+                        dto.getAccountActivity(),
+                        dto.getOverdraftLimit()
                 );
             }
             case SAVINGS -> {
+                SavingsAccountDto dto = accountCreationRequest.getSavingsAccountDto();
                 account = new SavingsAccount(
-                        accountCreationRequest.getSavingsAccountDto().getAccountNum(),
-                        clientRepository.findById(accountCreationRequest.getSavingsAccountDto().getClientId()).get(),
-                        BigDecimal.valueOf(accountCreationRequest.getSavingsAccountDto().getAccountBalance()),
-                        accountCreationRequest.getSavingsAccountDto().getCurrency(),
-                        accountCreationRequest.getSavingsAccountDto().getOpenDate(),
-                        accountCreationRequest.getSavingsAccountDto().getAccountActivity(),
-                        accountCreationRequest.getSavingsAccountDto().getInterestRate()
+                        dto.getAccountNum(),
+                        client,
+                        BigDecimal.valueOf(dto.getAccountBalance()),
+                        dto.getCurrency(),
+                        dto.getOpenDate(),
+                        dto.getAccountActivity(),
+                        dto.getInterestRate()
                 );
             }
             case SOCIAL -> {
+                SocialAccountDto dto = accountCreationRequest.getSocialAccountDto();
                 account = new SocialAccount(
-                        accountCreationRequest.getSocialAccountDto().getAccountNum(),
-                        clientRepository.findById(accountCreationRequest.getSocialAccountDto().getClientId()).get(),
-                        BigDecimal.valueOf(accountCreationRequest.getSocialAccountDto().getAccountBalance()),
-                        accountCreationRequest.getSocialAccountDto().getCurrency(),
-                        accountCreationRequest.getSocialAccountDto().getOpenDate(),
-                        accountCreationRequest.getSocialAccountDto().getAccountActivity(),
-                        accountCreationRequest.getSocialAccountDto().getSocialPayments()
+                        dto.getAccountNum(),
+                        client,
+                        BigDecimal.valueOf(dto.getAccountBalance()),
+                        dto.getCurrency(),
+                        dto.getOpenDate(),
+                        dto.getAccountActivity(),
+                        dto.getSocialPayments()
                 );
             }
             case CREDIT -> {
+                CreditAccountDto dto = accountCreationRequest.getCreditAccountDto();
                 account = new CreditAccount(
-                        accountCreationRequest.getCreditAccountDto().getAccountNum(),
-                        clientRepository.findById(accountCreationRequest.getCreditAccountDto().getClientId()).get(),
-                        BigDecimal.valueOf(accountCreationRequest.getCreditAccountDto().getAccountBalance()),
-                        accountCreationRequest.getCreditAccountDto().getCurrency(),
-                        accountCreationRequest.getCreditAccountDto().getOpenDate(),
-                        accountCreationRequest.getCreditAccountDto().getAccountActivity(),
-                        accountCreationRequest.getCreditAccountDto().getCreditLimit()
+                        dto.getAccountNum(),
+                        client,
+                        BigDecimal.valueOf(dto.getAccountBalance()),
+                        dto.getCurrency(),
+                        dto.getOpenDate(),
+                        dto.getAccountActivity(),
+                        dto.getCreditLimit()
                 );
             }
-            default -> throw new IllegalArgumentException("Invalid account type");
+            default -> throw new IllegalArgumentException("Невалидный тип счета");
         }
 
         accountRepository.save(account);
@@ -124,5 +159,16 @@ public class AccountService {
                     .map(accountMapper::mapToAccountDTO)
                     .collect(Collectors.toList()));
         } else return Optional.empty();
+    }
+
+    public List<AccountDto> getAccounts() {
+        List<Account> accounts = accountRepository.findAll();
+        return accountMapper.mapToAccountDTOList(accounts);
+    }
+
+    public List<ClientIncomeAccountDto> getClientsIncomeAndAccountCount() {
+        return accountRepository.findClientsIncomeAndAccountCount().stream()
+                .map(result -> new ClientIncomeAccountDto((Double) result[0], (Long) result[1]))
+                .toList();
     }
 }

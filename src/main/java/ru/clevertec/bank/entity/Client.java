@@ -28,7 +28,7 @@ public class Client extends User {
 
 
     public Client(User user, String address, String mobilePhone, double income) {
-        super(user.getId(), user.getLogin(), user.getEmail(), user.getPassword(), user.getFirstName(), user.getSecondName(), user.getPatronymicName(), user.getAvatar(), Role.CLIENT);
+        super(user.getId(), user.getLogin(), user.getEmail(), user.getPassword(), user.getFirstName(), user.getSecondName(), user.getPatronymicName(), user.getAvatar(), Role.CLIENT,true);
         this.address = address;
         this.income = income;
         this.mobilePhone = mobilePhone;

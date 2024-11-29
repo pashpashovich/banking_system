@@ -9,6 +9,7 @@ import ru.clevertec.bank.entity.Account;
 import ru.clevertec.bank.entity.Transaction;
 import ru.clevertec.bank.entity.enumeration.TransactionType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -49,4 +50,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("endDate") LocalDateTime endDate,
             @Param("startDate") LocalDateTime startDate
     );
+
+    List<Transaction> findByTransactionTimeBetween(LocalDateTime startDate,LocalDateTime endDate);
+
+    List<Transaction> findByTransactionTimeBetweenAndTransactionType(LocalDateTime transactionTimeStart, LocalDateTime transactionTimeEnd, TransactionType transactionType);
+
+    List<Transaction> findTransactionsByTransactionTimeBetween(LocalDateTime startDate,LocalDateTime endDate);
 }

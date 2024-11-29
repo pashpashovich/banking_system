@@ -2,7 +2,7 @@ package ru.clevertec.bank.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import ru.clevertec.bank.request.CurrencyRate;
+import ru.clevertec.bank.domain.CurrencyRate;
 
 import java.math.BigDecimal;
 import java.util.HashMap;

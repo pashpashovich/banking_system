@@ -1,4 +1,4 @@
-package ru.clevertec.bank.request;
+package ru.clevertec.bank.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

@@ -14,6 +14,9 @@ import ru.clevertec.bank.entity.CreditAccount;
 import ru.clevertec.bank.entity.SavingsAccount;
 import ru.clevertec.bank.entity.SocialAccount;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Mapper(componentModel = "spring")
 public interface AccountMapperByInstanceChecks {
     @Mapping(source = "client", target = "clientId")
@@ -45,6 +48,12 @@ public interface AccountMapperByInstanceChecks {
 
     default Long map(Client client) {
         return client != null ? client.getId() : null;
+    }
+
+    default List<AccountDto> mapToAccountDTOList(List<Account> accounts) {
+        return accounts.stream()
+                .map(this::mapToAccountDTO)
+                .toList();
     }
 
     default AccountDto mapToAccountDTO(Account account) {

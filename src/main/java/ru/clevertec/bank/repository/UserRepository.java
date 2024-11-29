@@ -4,11 +4,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.clevertec.bank.entity.User;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<User,Long> {
-    public User findByLogin(String login);
+    User findByLogin(String login);
 
-    public boolean existsUserByLogin(String login);
-    public boolean existsUserByEmail(String email);
+    boolean existsUserByLogin(String login);
+    boolean existsUserByEmail(String email);
 
+    Optional<User> findByEmail(String email);
 }

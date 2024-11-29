@@ -1,4 +1,4 @@
-package ru.clevertec.bank.request;
+package ru.clevertec.bank.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,4 +17,9 @@ public class AccountTransactionStatsDTO {
     private BigDecimal totalDeposits;
     private BigDecimal totalWithdrawals;
 
+    public AccountTransactionStatsDTO(BigDecimal maxTransaction, BigDecimal minTransaction, BigDecimal avgTransaction) {
+        this.maxTransaction = maxTransaction;
+        this.minTransaction = minTransaction;
+        this.avgTransaction = avgTransaction;
+    }
 }

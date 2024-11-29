@@ -10,14 +10,11 @@ import ru.clevertec.bank.entity.enumeration.Role;
 @Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientDto {
-    private Long id;
+public class DirectorDto {
     private String email;
     private String firstName;
     private String secondName;
     private String patronymicName;
     private Role role;
-    private String address;
     private String mobilePhone;
-    private double income;
 }

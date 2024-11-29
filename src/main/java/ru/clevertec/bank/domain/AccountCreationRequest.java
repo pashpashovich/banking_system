@@ -1,4 +1,4 @@
-package ru.clevertec.bank.request;
+package ru.clevertec.bank.domain;
 
 import lombok.Data;
 import ru.clevertec.bank.domain.CheckingAccountDto;
