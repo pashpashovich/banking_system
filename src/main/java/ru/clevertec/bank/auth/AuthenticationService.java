@@ -39,6 +39,7 @@ public class AuthenticationService {
                     .secondName(request.getSecondName())
                     .patronymicName(request.getPatronymicName())
                     .role(Role.CLIENT)
+                    .isActive(false)
                     .build();
             Client client = new Client(user, request.getAddress(), request.getMobilePhone(), request.getIncome());
             clientService.save(client);
@@ -58,15 +59,23 @@ public class AuthenticationService {
                             request.getPassword()
                     )
             );
+
             var user = userRepository.findByLogin(request.getLogin());
+
+            if (!user.isActive()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ваш аккаунт заблокирован. Пожалуйста, свяжитесь с поддержкой.");
+            }
+
             var jwtToken = jwtService.generateToken(user);
             return AuthenticationResponse.builder()
                     .token(jwtToken)
                     .id(user.getId())
                     .role(user.getRole().name())
                     .build();
+
         } catch (AuthenticationException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Неверный логин или пароль", ex);
         }
     }
+
 }

@@ -68,6 +68,11 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/users/client/*").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/role").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/admin/*").hasAnyAuthority("ADMIN", "DIRECTOR")
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

@@ -1,6 +1,7 @@
 package ru.clevertec.bank.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +31,11 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/auth")
+@Slf4j
 public class AuthenticationController {
     private final AuthenticationService service;
     private PasswordResetService passwordResetService;
     private UserService userService;
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
 
     public AuthenticationController(AuthenticationService service, PasswordResetService passwordResetService, UserService userService) {
@@ -93,16 +94,9 @@ public class AuthenticationController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             SecurityContextHolder.clearContext();
-            logger.info("User logged out: {}", authentication.getName());
+            log.info("User logged out: {}", authentication.getName());
         }
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/some-endpoint")
-    public String someMethod() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        logger.info("Required authority: ADMIN");
-        logger.info("User authorities: {}", authentication.getAuthorities());
-        return authentication.getAuthorities().toString();
-    }
 }
