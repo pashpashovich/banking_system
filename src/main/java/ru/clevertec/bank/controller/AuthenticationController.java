@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import ru.clevertec.annotation.MonitorPerformance;
 import ru.clevertec.bank.auth.AuthenticationRequest;
 import ru.clevertec.bank.auth.AuthenticationResponse;
 import ru.clevertec.bank.auth.AuthenticationService;
@@ -83,12 +84,14 @@ public class AuthenticationController {
         return ResponseEntity.ok().build();
     }
 
+    @MonitorPerformance
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
     }
 
+    @MonitorPerformance
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
