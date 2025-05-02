@@ -1,4 +1,0 @@
-performance:
-  monitor:
-    enabled: true
-    min-execution-time: 0
