@@ -71,8 +71,7 @@ public class UserService {
       throw new EntityNotFoundException("Пользователь не найден");
     }
     Optional<User> user = userRepository.findById(id);
-    user.ifPresent(value -> passwordResetService.deleteByUserId(value));
-    System.out.println(id);
+    user.ifPresent(passwordResetService::deleteByUserId);
     userRepository.deleteById(id);
   }
 

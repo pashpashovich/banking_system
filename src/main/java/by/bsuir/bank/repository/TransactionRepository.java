@@ -6,6 +6,7 @@ import by.bsuir.bank.entity.Transaction;
 import by.bsuir.bank.entity.enumeration.TransactionType;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.Lombok;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -57,4 +58,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       LocalDateTime transactionTimeEnd, TransactionType transactionType);
 
   List<Transaction> findTransactionsByTransactionTimeBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+  void deleteBySenderAccountOrRecipientAccount(Account senderAccount, Account recipientAccount);
 }
