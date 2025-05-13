@@ -34,37 +34,30 @@ public class PdfReceiptService {
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
       PdfFont font = PdfFontFactory.createFont(FONT_PATH, PdfEncodings.IDENTITY_H);
 
-      Image logo = new Image(ImageDataFactory.create(IMAGE_PATH))
-          .scaleToFit(30, 30)
-          .setFixedPosition(40, 750);
+      Image logo = new Image(ImageDataFactory.create(IMAGE_PATH)).scaleToFit(30, 30).setFixedPosition(40, 750);
       document.add(logo);
 
-      Paragraph bankName = new Paragraph("FinScope")
-          .setFont(font)
-          .setFontSize(24)
-          .setBold()
-          .setFontColor(ColorConstants.BLACK)
-          .setFixedPosition(80, 747, 1000);
+      Paragraph bankName = new Paragraph("FinScope").setFont(font).setFontSize(24).setBold()
+          .setFontColor(ColorConstants.BLACK).setFixedPosition(80, 747, 1000);
       document.add(bankName);
 
-      Paragraph title = new Paragraph("Чек")
-          .setFont(font)
-          .setFontSize(18)
-          .setBold()
-          .setTextAlignment(TextAlignment.CENTER)
-          .setPaddingTop(35)
-          .setMarginBottom(30)
+      Paragraph title = new Paragraph("Чек").setFont(font).setFontSize(18).setBold()
+          .setTextAlignment(TextAlignment.CENTER).setPaddingTop(35).setMarginBottom(30)
           .setFontColor(ColorConstants.BLACK);
       document.add(title);
 
-      Table table = new Table(UnitValue.createPercentArray(new float[]{1, 2}))
-          .useAllAvailableWidth()
+      Table table = new Table(UnitValue.createPercentArray(new float[]{1, 2})).useAllAvailableWidth()
           .setBorder(new SolidBorder(ColorConstants.BLACK, 1));
 
       addTableRow(table, "ID транзакции:", String.valueOf(transaction.getId()), font);
-      addTableRow(table, "Тип транзакции:", transaction.getTransactionType().toString(), font);
-      addTableRow(table, "Номер счета отправителя:", String.valueOf(transaction.getSenderAccountId()), font);
-      addTableRow(table, "Номер счета получателя:", String.valueOf(transaction.getRecipientAccountId()), font);
+      addTableRow(table, "Тип транзакции:", transaction.getTransactionType().getDisplayName(), font);
+      addTableRow(table, "Номер счета отправителя:",
+          transaction.getSenderAccountId() != null ? String.valueOf(transaction.getSenderAccountId()) : "-", font);
+
+      addTableRow(table, "Номер счета получателя:",
+          transaction.getRecipientAccountId() != null ? String.valueOf(transaction.getRecipientAccountId()) : "-",
+          font);
+
       addTableRow(table, "Сумма:", transaction.getAmount() + " " + transaction.getCurrency(), font);
       addTableRow(table, "Дата и время:", transaction.getTransactionTime().format(formatter), font);
 

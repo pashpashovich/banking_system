@@ -40,7 +40,7 @@ class EmailServiceTest {
     verify(mailSender).send(captor.capture());
 
     SimpleMailMessage sentMessage = captor.getValue();
-    assertEquals("info@trial-z3m5jgrw55zldpyo.mlsender.net", sentMessage.getFrom());
+    assertEquals("MS_onzE7m@test-2p0347z92y3lzdrn.mlsender.net", sentMessage.getFrom());
     assertEquals(to, sentMessage.getTo()[0]);
     assertEquals(subject, sentMessage.getSubject());
     assertEquals(text, sentMessage.getText());

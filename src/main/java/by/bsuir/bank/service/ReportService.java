@@ -53,7 +53,7 @@ public class ReportService {
             String fontPath = "src/main/resources/fonts/DejaVuSans.ttf";
             PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
 
-            addHeader(document, font);
+            addHeader(document, font, "Выписка со счёта");
             addReportDetails(document, font, accountNum, month);
             addTransactionSummary(document, font, transactions, accountNum);
             addTransactionTable(document, font, transactions);
@@ -74,7 +74,7 @@ public class ReportService {
             Document document = new Document(pdfDoc);
             String fontPath = "src/main/resources/fonts/DejaVuSans.ttf";
             PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
-            addHeader(document, font);
+            addHeader(document, font,"Отчет по транзакционной активности клиентов");
             addReportDetails(document, font, startDate, endDate);
             addTransactionSummary(document, font, transactions);
             addTransactionTable(document, font, transactions);
@@ -84,7 +84,7 @@ public class ReportService {
         }
     }
 
-    private void addHeader(Document document, PdfFont font) throws Exception {
+    private void addHeader(Document document, PdfFont font, String name) throws Exception {
         String imagePath = "src/main/resources/images/logo.png";
         Image logo = new Image(ImageDataFactory.create(imagePath))
                 .scaleToFit(30, 30)
@@ -99,7 +99,7 @@ public class ReportService {
                 .setFixedPosition(80, 747, 1000);
         document.add(bankName);
 
-        document.add(new Paragraph("Отчет по транзакциям")
+        document.add(new Paragraph(name)
                 .setFont(font)
                 .setFontSize(18)
                 .setTextAlignment(TextAlignment.CENTER)
