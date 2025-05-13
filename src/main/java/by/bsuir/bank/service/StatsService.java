@@ -1,9 +1,14 @@
 package by.bsuir.bank.service;
 
+import static by.bsuir.bank.entity.enumeration.LoanStatus.APPROVED;
+
 import by.bsuir.bank.domain.AccountTransactionStatsDTO;
 import by.bsuir.bank.domain.DailyTransactionStats;
+import by.bsuir.bank.domain.LoanStatsDTO;
 import by.bsuir.bank.domain.TransactionDTO;
+import by.bsuir.bank.entity.LoanRequest;
 import by.bsuir.bank.entity.enumeration.TransactionType;
+import by.bsuir.bank.repository.LoanRequestRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +30,7 @@ public class StatsService {
   private final TransactionService transactionService;
 
   private final CurrencyConversionService currencyConversionService;
+  private final LoanRequestRepository loanRequestRepository;
 
   public Map<Integer, DailyTransactionStats> getAccountDailyTransactionStats(int month, String accountNum) {
     LocalDateTime startDate = LocalDate.now().withMonth(month).withDayOfMonth(1).atStartOfDay();
@@ -105,4 +112,19 @@ public class StatsService {
     AccountTransactionStatsDTO stats = new AccountTransactionStatsDTO(maxTransaction, minTransaction, avgTransaction);
     return stats;
   }
+
+  public Map<String, LoanStatsDTO> getLoanStatsByRegion() {
+    List<LoanRequest> requests = loanRequestRepository.findAll();
+    return requests.stream()
+        .collect(Collectors.groupingBy(
+            r -> r.getClient().getAddress(),
+            Collectors.collectingAndThen(Collectors.toList(), list -> {
+              int total = list.size();
+              BigDecimal sum = list.stream().map(LoanRequest::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+              long approved = list.stream().filter(r -> r.getStatus() == APPROVED).count();
+              return new LoanStatsDTO(total, sum, approved);
+            })
+        ));
+  }
+
 }
